@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>index</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>AI Application</h1>
+    <hr>
+    이름 : {{user}}<br>
+    레벨 : {{data.level}}<br>
+    포인트 : {{data.point}}<br>
+    경험치 : {{data.exp}}<br>
+    <hr>
+    <form action="/" method="POST">
+        다음 이름 : <input type="text" name="user">
+        <button type="submit">전송하기</button>
+    </form>
+</body>
+</html>
