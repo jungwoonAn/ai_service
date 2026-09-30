@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-uri = "mongodb+srv://admin:qwer1234@cluster0.pdfjsrv.mongodb.net/?appName=Cluster0"
+uri = "mongodb+srv://<db_username>:<db_password>@cluster0.pdfjsrv.mongodb.net/?appName=Cluster0"
 client = MongoClient(uri)
 try:
     client.admin.command("ping")
