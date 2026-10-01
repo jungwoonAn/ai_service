@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pinecone import Pinecone
 
+from datetime import datetime
+
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -36,7 +38,7 @@ text2_vector = client.embeddings.create(input=text2, model=embedding_model).data
 #         {
 #             "id": "id1",
 #             "values": text1_vector,
-#             "metadata": {"input_date": "20260608"}
+#             "metadata": {"input_date": datetime.now().strftime("%Y%m%d")}
 #         }
 #     ]
 # )
@@ -46,7 +48,7 @@ text2_vector = client.embeddings.create(input=text2, model=embedding_model).data
 #         {
 #             "id": "id2",
 #             "values": text2_vector,
-#             "metadata": {"input_date": "20260608"}
+#             "metadata": {"input_date": datetime.now().strftime("%Y%m%d")}
 #         }
 #     ]
 # )
@@ -58,5 +60,5 @@ query = """
 query_vector = client.embeddings.create(input=query, model=embedding_model).data[0].embedding
 
 # top_k : 유사도가 높은 순으로 몇 개를 결과로 도출할지에 대한 인수
-search_result = index.query(filter={'input_date': '20260608'}, top_k=2, vector=query_vector)
+search_result = index.query(filter={'input_date': datetime.now().strftime("%Y%m%d")}, top_k=2, vector=query_vector)
 print(f'search result = {search_result}')

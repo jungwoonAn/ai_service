@@ -1,4 +1,6 @@
 import math
+import threading
+import time
 
 from common import model, client, gpt_num_tokens, makeup_response
 from warning_agent import WarningAgent
@@ -19,8 +21,13 @@ class Chatbot:
         self.assistant = kwargs["assistant"]
         self.warningAgent = self._create_warning_agent()
         # 메모리 추가 및 DB저장
-        self.memoryManager = MemoryManager()
+        self.memoryManager = MemoryManager(**kwargs)  # MemoryManager에 role 전달
         self.context.extend(self.memoryManager.restore_chat())
+
+        # 데몬 백그라운드 스레드 실행
+        bg_thread = threading.Thread(target=self.background_task)
+        bg_thread.daemon = True
+        bg_thread.start()
 
     def _create_warning_agent(self):
         return WarningAgent(
@@ -85,6 +92,8 @@ class Chatbot:
             print(f'Exception 오류({type(e)}) 발생 : {e}')
 
     def send_request(self):
+        # 사용자의 질문에 대해 유사 기억을 DB에서 검색한 내용
+        memory_instruction = self.retrieve_memory()
         # WarningAgent가 사용자의 마지막 대화를 검사
         if self.warningAgent.monitor_user(self.context):
             warning_message = self.warningAgent.warn_user()
@@ -92,7 +101,8 @@ class Chatbot:
             return warning_message
         else:
             # 요청 전에 마지막 사용자 메시지에 instruction 추가
-            self.context[-1]["content"] += self.instruction
+            # 과거 유사 기억을 instruction에 추가
+            self.context[-1]["content"] += self.instruction  + (memory_instruction if memory_instruction else "")
             return self._send_request()
 
     # 답변 받은 후 context에서 instruction 삭제
@@ -137,3 +147,26 @@ class Chatbot:
             return response
 
         return str(response)
+
+    # 유사 대화를 메모리에서 검색하여 귓속말로 사용자 메시지에 삽입
+    def retrieve_memory(self):
+        user_message = self.context[-1]['content']
+        if not self.memoryManager.needs_memory(user_message):
+            return ""
+
+        memory = self.memoryManager.retrieve_memory(user_message)
+        if memory is not None:
+            whisper = (f"[귓속말]\n{self.assistant}야! 기억 속 대화 내용이야. 앞으로 이 내용을 참조하면서 답해 줘."
+                       f"얼마 전에 나누었던 대화라는 점을 자연스럽게 말해 줘.\n{memory}")
+            return whisper
+
+        return "[기억이 안 난다고 답할 것]"
+
+    # 주기적으로 context를 저장하고 memory 구축하는 백그라운드 태스크
+    def background_task(self):
+        while True:
+            self.save_chat()
+            self.context = [{"role": v['role'], "content": v['content'], "saved": True} for v in self.context]
+            self.memoryManager.build_memory()
+            # time.sleep( 3600 )  # 1시간마다 반복
+            time.sleep(120)  # test
