@@ -12,7 +12,8 @@ Flask 기반의 웹 애플리케이션을 구성하고, Chatbot을 중심으로 
 
 ### 2.1 `webapp`
 
-**서버 프로그램(Flask)**
+<details><summary><b> 서버 프로그램(Flask) </b></summary>
+
 
 Flask를 기반으로 웹 애플리케이션 서버를 구성한다.
 
@@ -22,12 +23,12 @@ Flask를 기반으로 웹 애플리케이션 서버를 구성한다.
 - URL Routing
 - HTTP 요청 및 응답 처리
 - 웹 애플리케이션의 기본 진입점 제공
+</details>
 
----
 
 ### 2.2 `Chatbot`
 
-**Chatbot 설계**
+<details><summary><b> Chatbot 설계 </b></summary>
 
 LLM과 사용자 간의 대화를 관리하는 핵심 모듈이다.
 
@@ -55,12 +56,12 @@ OpenAI Responses API
  ▼
 LLM Response
 ```
+</details>
 
----
 
 ### 2.3 `BaseContainer`
 
-**Application Server 구성**
+<details><summary><b> Application Server 구성 </b></summary>
 
 Flask를 기반으로 애플리케이션 서버의 기본 구조를 구성한다.
 
@@ -70,12 +71,12 @@ Flask를 기반으로 애플리케이션 서버의 기본 구조를 구성한다
 - 웹 화면 제공
 - 기본 서버 실행 환경 구성
 - 공통 Application 기능 제공
+</details>
 
----
 
 ### 2.4 `FirstContainer`
 
-**Application + Chatbot 연동**
+<details><summary><b> Application + Chatbot 연동 </b></summary>
 
 Flask Application과 Chatbot을 실제로 연결하는 구성 요소이다.
 
@@ -98,12 +99,12 @@ Chatbot
    ▼
 OpenAI API
 ```
+</details>
 
----
 
 ### 2.5 `systemrole_func`
 
-**시스템 역할 및 Tool Calling Function**
+<details><summary><b> 시스템 역할 및 Tool Calling Function </b></summary>
 
 Chatbot의 동작 방식을 정의하는 System Role과 Tool Calling에 사용되는 함수를 관리한다.
 
@@ -127,12 +128,12 @@ System Role
             ├── 환율 조회
             └── 인터넷 검색
 ```
+</details>
 
----
 
 ### 2.6 `SystemRoleContainer`
 
-**Chatbot 시스템 역할 설정**
+<details><summary><b> Chatbot 시스템 역할 설정 </b></summary>
 
 Chatbot이 어떤 역할과 방식으로 응답할지를 정의하는 부분이다.
 
@@ -153,12 +154,12 @@ Chatbot이 어떤 역할과 방식으로 응답할지를 정의하는 부분이�
 - System Role 설정
 - Chatbot의 성격 및 응답 방식 정의
 - LLM에게 전달할 초기 지시사항 구성
+</details>
 
----
 
 ### 2.7 `ToolCallingContainer`
 
-**Tool Calling 구현**
+<details><summary><b> Tool Calling 구현 </b></summary>
 
 LLM이 필요한 기능을 판단하고 외부 함수를 호출할 수 있도록 Tool Calling 기능을 구현한다.
 
@@ -215,12 +216,12 @@ LLM
           ▼
 "현재 서울의 기온은 약 24.8℃입니다."
 ```
+</details>
 
----
 
 ### 2.8 `AgentContainer`
 
-**AI Agent 구성**
+<details><summary><b> AI Agent 구성 </b></summary>
 
 LLM과 Tool Calling을 활용하여 특정 목적을 수행하는 AI Agent를 구현한다.
 
@@ -289,12 +290,12 @@ Warning Agent
      ▼
 경고 메시지 생성
 ```
+</details>
 
----
 
 ### 2.9 `test`
 
-**MongoDB 연결 및 기본 기능 테스트**
+<details><summary><b> 연결 및 기본 기능 테스트 </b></summary>
 
 MongoDB를 애플리케이션에 연결하고 데이터 저장 및 조회 기능을 확인하기 위한 테스트 단계이다.
 
@@ -304,12 +305,12 @@ MongoDB를 애플리케이션에 연결하고 데이터 저장 및 조회 기능
 - Database 및 Collection 확인
 - 데이터 삽입 및 조회 테스트
 - MongoDB 기반 대화 저장의 기본 기능 확인
+</details>
 
----
 
 ### 2.10 `DBContainer`
 
-**MongoDB 기반 대화 내용 저장**
+<details><summary><b> MongoDB 기반 대화 내용 저장 </b></summary>
 
 Chatbot의 사용자 및 Assistant 대화 내용을 MongoDB에 저장하는 단계이다.
 
@@ -334,12 +335,12 @@ Chatbot
 ```
 
 이 단계에서는 대화 내용을 원본 형태로 저장하여 이후 대화 검색 및 Memory 기능의 기반을 마련한다.
+</details>
 
----
 
 ### 2.11 `embedding_test`
 
-**Embedding / Similarity / Vector DB 테스트**
+<details><summary><b> Embedding / Similarity / Vector DB 테스트 </b></summary>
 
 대화 내용을 벡터로 변환하고 유사도 검색을 수행하기 위한 테스트 단계이다.
 
@@ -369,12 +370,12 @@ Similarity Search
     ▼
 관련 대화 검색
 ```
+</details>
 
----
 
 ### 2.12 `VectorContainer`
 
-**MongoDB + Vector DB 기반 대화 Memory**
+<details><summary><b> MongoDB + Vector DB 기반 대화 Memory </b></summary>
 
 대화 원본은 MongoDB에 저장하고, 대화 내용을 요약하여 Vector DB에 저장하는 구조를 구성한다.
 
@@ -412,12 +413,11 @@ Similarity Search
 ```
 
 MongoDB와 Vector DB의 역할을 분리하여 **원본 대화 저장**과 **의미 기반 Memory 검색**을 함께 수행한다.
-
----
+</details>
 
 ### 2.13 `ConversationContainer`
 
-**OpenAI Conversations API 기반 대화 관리**
+<details><summary><b> OpenAI Conversations API 기반 대화 관리 </b></summary>
 
 OpenAI Conversations API를 이용하여 대화 상태와 대화 내용을 관리하는 단계이다.
 
@@ -466,6 +466,7 @@ response = client.responses.create(
 ```
 
 이후 동일한 `conversation.id`를 사용하면 같은 Conversation을 대상으로 계속 대화할 수 있다.
+</details>
 
 ---
 
@@ -474,7 +475,7 @@ response = client.responses.create(
 프로젝트는 Flask Application을 기반으로 Chatbot을 구성하고, System Role, Tool Calling, AI Agent 기능을 단계적으로 확장한다. 이후 MongoDB를 이용한 대화 저장, Embedding과 Pinecone을 이용한 Vector Memory, OpenAI Conversations API를 이용한 대화 관리 기능을 추가하여 AI Agent가 대화 내용을 지속적으로 관리할 수 있도록 발전시킨다.
 
 전체 구성과 발전 과정을 하나의 흐름으로 나타내면 다음과 같다.
-
+<details><summary><b> Flow </b></summary>
 ```text
 ┌─────────────────────────────┐
 │          webapp             │
@@ -552,6 +553,7 @@ response = client.responses.create(
                                           ▼
                                          LLM
 ```
+</details>
 
 ---
 
