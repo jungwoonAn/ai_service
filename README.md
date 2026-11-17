@@ -573,7 +573,7 @@ response = client.responses.create(
 | `AgentContainer` | 목적별 AI Agent 구현 |
 | `AgentContainer/보고서 Agent` | 인터넷 검색 및 보고서 생성 |
 | `AgentContainer/경고 Agent` | 불쾌한 말 및 모순적인 말 탐지 |
-| `test` | MongoDB 연결 및 기본 CRUD 테스트 |
+| `mongodb_test` | MongoDB 연결 및 기본 CRUD 테스트 |
 | `DBContainer` | MongoDB 기반 원본 대화 저장 |
 | `embedding_test` | Embedding, Similarity, Pinecone 테스트 |
 | `VectorContainer` | MongoDB + Vector DB 기반 Memory 관리 |
