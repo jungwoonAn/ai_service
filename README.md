@@ -293,7 +293,7 @@ Warning Agent
 </details>
 
 
-### 2.9 `test`
+### 2.9 `mongodb_test`
 
 <details><summary><b> 연결 및 기본 기능 테스트 </b></summary>
 
@@ -497,27 +497,27 @@ response = client.responses.create(
                ▼
 ┌─────────────────────────────┐
 │          Chatbot            │
-│     대화 및 LLM 관리          │
+│     대화 및 LLM 관리        │
 └───────┬─────────┬───────────┘
         │         │
         │         ├──────────────────────────────────────┐
         │         │                                      │
         ▼         ▼                                      ▼
 ┌──────────────┐ ┌──────────────────┐          ┌──────────────────┐
-│ SystemRole   │ │ ToolCalling      │          │ 대화 관리         │
+│ SystemRole   │ │ ToolCalling      │          │ 대화 관리        │
 │ Container    │ │ Container        │          │ 및 Memory        │
 └──────────────┘ └────────┬─────────┘          └────────┬─────────┘
                           │                             │
                           ▼                             ▼
                  ┌──────────────────┐            ┌──────────────┐
-                 │  AgentContainer  │            │     test     │
+                 │  AgentContainer  │            │ mongodb_test │
                  │                  │            │ MongoDB Test │
-                 │  ├─ 보고서 Agent  │            └──────┬───────┘
-                 │  └─ 경고 Agent    │                   │
+                 │  ├─ 보고서 Agent │            └──────┬───────┘
+                 │  └─ 경고 Agent   │                   │
                  └────────┬─────────┘                   ▼
                           │                      ┌──────────────┐
                           │                      │ DBContainer  │
-                          │                      │ MongoDB 저장  │
+                          │                      │ MongoDB 저장 │
                           │                      └──────┬───────┘
                           │                             │
                           │                             ▼
