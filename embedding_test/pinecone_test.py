@@ -1,19 +1,19 @@
-# pinecone_test.py
 import os
-from dotenv import load_dotenv
+from datetime import datetime
 
+from dotenv import load_dotenv
 from openai import OpenAI
 from pinecone import Pinecone
-
-from datetime import datetime
 
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-pinecone = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
 
-# Pinecone index
-index = pinecone.Index('chatbot-memory')
+pinecone = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+index = pinecone.index('test-index')
+
+# print(type(index))
+# print(hasattr(index, "documents"))
 
 text1 = """
 신데렐라는 어려서 부모님을 잃고 불친절한 새어머니와 언니들과 삽니다. 요정 대모님의 마법으로 왕자님
@@ -27,38 +27,43 @@ text2 = """
 용을 담당합니다. 이 구성 요소들은 소프트웨어와 하드웨어의 효율적인 동작을 위해 설계되었습니다.
 """
 
-embedding_model = 'text-embedding-3-small'
-
-text1_vector = client.embeddings.create(input=text1, model=embedding_model).data[0].embedding
-text2_vector = client.embeddings.create(input=text2, model=embedding_model).data[0].embedding
-
 # Pinecone index에 vector 저장
-# index.upsert(
-#     vectors=[
+# index.documents.upsert(
+#     namespace="test-index",
+#     documents=[
 #         {
-#             "id": "id1",
-#             "values": text1_vector,
-#             "metadata": {"input_date": datetime.now().strftime("%Y%m%d")}
-#         }
-#     ]
-# )
-#
-# index.upsert(
-#     vectors=[
+#             "_id" : "id1",
+#             "values": text1,
+#             "input_date": datetime.now().strftime("%Y%m%d")
+#         },
 #         {
-#             "id": "id2",
-#             "values": text2_vector,
-#             "metadata": {"input_date": datetime.now().strftime("%Y%m%d")}
+#             "_id" : "id2",
+#             "values": text2,
+#             "input_date": datetime.now().strftime("%Y%m%d")
 #         }
 #     ]
 # )
 
 query = """
-이 내용은 동화나 소설과 같은 문학 작품에 관한 이야기입니다.
-등장인물, 사건, 이야기의 전개 등이 중심이 되는 문학적인 내용입니다.
+이 내용은 컴퓨터 과학이나 IT 기술에 관한 기술 문서입니다.
+컴퓨터 구조, CPU, 메모리, 하드웨어, 소프트웨어 등의 기술적인 내용을
+설명하는 문서입니다.
 """
-query_vector = client.embeddings.create(input=query, model=embedding_model).data[0].embedding
 
 # top_k : 유사도가 높은 순으로 몇 개를 결과로 도출할지에 대한 인수
-search_result = index.query(filter={'input_date': datetime.now().strftime("%Y%m%d")}, top_k=2, vector=query_vector)
+search_result = index.documents.search(
+    namespace="test-index",
+    score_by=[
+        {
+            "type": "embed",
+            "field": "values",
+            "query": query
+        }
+    ],
+    top_k=2
+)
+
 print(f'search result = {search_result}')
+
+for match in search_result.matches:
+    print(match.id, match.score)
