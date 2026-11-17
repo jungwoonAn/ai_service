@@ -2,13 +2,9 @@ from common import client, model
 from characters import system_role
 from retry import retry
 
+
 class Chatbot:
-    def __init__(
-        self,
-        instructions=system_role,
-        use_model=model.basic,
-        conversation_id=None
-    ):
+    def __init__(self, instructions=system_role, use_model=model.basic, conversation_id=None):
         self.model = use_model
         self.instructions = instructions
 

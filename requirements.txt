@@ -8,7 +8,7 @@ MarkupSafe==3.0.2
 openai==2.38.0
 tiktoken==0.13.0
 tavily-python==0.7.25
-pinecone==9.0.1
+pinecone==10.3.0
 pymongo==4.13.2
 dnspython==2.8.0
 numpy==2.3.1

@@ -11,9 +11,8 @@ class Chatbot:
         # context 초기화 및 대화 문맥 생성
         self.model = use_model
         self.context = [
-            {"role": "system", "content": system_role}
+            {"role": "system", "content": f'{system_role}/n/n{instruction}'}
         ]
-        self.instruction = instruction  # 지시 추가
         self.max_token_size = 16 * 1024  # 최대 token 수
         # WarningAgent에 전달할 파라미터 추가
         self.kwargs = kwargs
@@ -76,7 +75,9 @@ class Chatbot:
         try:
             # saved 제외한 context의 max_token 크기를 벗어날 때 처리
             if gpt_num_tokens(self.to_openai_context()) > self.max_token_size:
-                self.context.pop()
+                # 마지막 사용자 메시지 삭제
+                if self.context[-1]["role"] == "user":
+                    self.context.pop()
                 return makeup_response('메시지를 조금 짧게 보내 줄래?')
 
             response = client.responses.create(
@@ -99,19 +100,25 @@ class Chatbot:
             warning_message = self.warningAgent.warn_user()
             print(f"WarningAgent response: {warning_message}")
             return warning_message
-        else:
-            # 요청 전에 마지막 사용자 메시지에 instruction 추가
-            # 과거 유사 기억을 instruction에 추가
-            self.context[-1]["content"] += self.instruction  + (memory_instruction if memory_instruction else "")
+
+        if memory_instruction:
+            # 과거 유사 기억을 마지막 content에 추가
+            self.context[-1]["content"] += (f"\n\n{memory_instruction}")
+
+        try:
             return self._send_request()
+
+        finally:
+            # API 요청 성공/실패와 관계없이 과거 기억 제거
+            self.clear_context()
 
     # 답변 받은 후 context에서 instruction 삭제
     def clear_context(self):
         for idx in reversed(range(len(self.context))):
             if self.context[idx]["role"] == "user":
                 content = self.context[idx]["content"]
-                if "instruction:\n" in content:
-                    self.context[idx]["content"] = content.split("instruction:\n")[0].strip()
+                if "[귓속말]" in content:
+                    self.context[idx]["content"] = content.split("\n\n[귓속말]\n")[0]
                 break
 
     # 응답 내용을 context에 추가
@@ -169,4 +176,4 @@ class Chatbot:
             self.context = [{"role": v['role'], "content": v['content'], "saved": True} for v in self.context]
             self.memoryManager.build_memory()
             # time.sleep( 3600 )  # 1시간마다 반복
-            time.sleep(120)  # test
+            time.sleep(120)  # mongodb_test

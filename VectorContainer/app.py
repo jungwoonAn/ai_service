@@ -18,19 +18,19 @@ chatbot = Chatbot(
 
 # ToolCalling 객체 생성
 tool_calling = ToolCalling(model=model.basic)
-application = Flask( __name__ )
+app = Flask( __name__ )
 
-@application.route( "/" )
+@app.route( "/" )
 def index():
     return "Hello, ChatGPT"
 
 # chat_app 함수 정의
-@application.route( "/chat-app" )
+@app.route( "/chat-app" )
 def chat_app():
     return render_template( "chat.html" )  
 
 # chat_api 함수 정의
-@application.route("/chat-api", methods=['POST'])
+@app.route("/chat-api", methods=['POST'])
 def chat_api():
     # 사용자 입력 내용
     print(f'request_message : {request.json}')
@@ -68,4 +68,4 @@ def shutdown():
     chatbot.save_chat()
 
 if __name__ == "__main__":
-    application.run( host = '0.0.0.0', port = 8080, debug = True )
+    app.run( host = '0.0.0.0', debug = True )

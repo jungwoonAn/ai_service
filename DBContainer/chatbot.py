@@ -9,9 +9,8 @@ class Chatbot:
         # context 초기화 및 대화 문맥 생성
         self.model = use_model
         self.context = [
-            {"role": "system", "content": system_role}
+            {"role": "system", "content": f'{system_role}/n/n{instruction}'}
         ]
-        self.instruction = instruction  # 지시 추가
         self.max_token_size = 16 * 1024  # 최대 token 수
         # WarningAgent에 전달할 파라미터 추가
         self.kwargs = kwargs
@@ -91,18 +90,7 @@ class Chatbot:
             print(f"WarningAgent response: {warning_message}")
             return warning_message
         else:
-            # 요청 전에 마지막 사용자 메시지에 instruction 추가
-            self.context[-1]["content"] += self.instruction
             return self._send_request()
-
-    # 답변 받은 후 context에서 instruction 삭제
-    def clear_context(self):
-        for idx in reversed(range(len(self.context))):
-            if self.context[idx]["role"] == "user":
-                content = self.context[idx]["content"]
-                if "instruction:\n" in content:
-                    self.context[idx]["content"] = content.split("instruction:\n")[0].strip()
-                break
 
     # 응답 내용을 context에 추가
     def add_response(self, response):

@@ -1,5 +1,5 @@
 # text_embedding_test.py
-# text-embedding-3-small embedding model test
+# text-embedding-3-small embedding model mongodb_test
 import os
 from dotenv import load_dotenv
 

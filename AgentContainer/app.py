@@ -1,4 +1,3 @@
-import atexit
 from flask import Flask, render_template, request
 
 from chatbot import Chatbot
@@ -18,19 +17,19 @@ chatbot = Chatbot(
 
 # ToolCalling 객체 생성
 tool_calling = ToolCalling(model=model.basic)
-application = Flask( __name__ )
+app = Flask( __name__ )
 
-@application.route( "/" )
+@app.route( "/" )
 def index():
     return "Hello, ChatGPT"
 
 # chat_app 함수 정의
-@application.route( "/chat-app" )
+@app.route( "/chat-app" )
 def chat_app():
     return render_template( "chat.html" )  
 
 # chat_api 함수 정의
-@application.route("/chat-api", methods=['POST'])
+@app.route("/chat-api", methods=['POST'])
 def chat_api():
     # 사용자 입력 내용
     print(f'request_message : {request.json}')
@@ -57,15 +56,9 @@ def chat_api():
     # 응답 결과 출력
     response_message = chatbot.get_response(response)  # 응답 출력
     chatbot.handle_token_limit(response)  # 토큰수 제어 메서드 실행
-    chatbot.clear_context()  # instruction 삭제
     print(f'response_message : {response_message}')
 
     return {"response_message": response_message}
 
-@atexit.register
-def shutdown():
-    print( 'flask shutting down...' )
-    chatbot.save_chat()
-
 if __name__ == "__main__":
-    application.run( host = '0.0.0.0', port = 8080, debug = True )
+    app.run( host = '0.0.0.0', debug = True )
