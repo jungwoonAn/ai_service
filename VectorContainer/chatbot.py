@@ -11,7 +11,7 @@ class Chatbot:
         # context 초기화 및 대화 문맥 생성
         self.model = use_model
         self.context = [
-            {"role": "system", "content": f'{system_role}/n/n{instruction}'}
+            {"role": "system", "content": f'{system_role}\n\n{instruction}'}
         ]
         self.max_token_size = 16 * 1024  # 최대 token 수
         # WarningAgent에 전달할 파라미터 추가
@@ -93,33 +93,28 @@ class Chatbot:
             print(f'Exception 오류({type(e)}) 발생 : {e}')
 
     def send_request(self):
-        # 사용자의 질문에 대해 유사 기억을 DB에서 검색한 내용
-        memory_instruction = self.retrieve_memory()
         # WarningAgent가 사용자의 마지막 대화를 검사
-        if self.warningAgent.monitor_user(self.context):
+        if self.warningAgent.monitor_user(self.to_openai_context()):
             warning_message = self.warningAgent.warn_user()
             print(f"WarningAgent response: {warning_message}")
             return warning_message
 
-        if memory_instruction:
-            # 과거 유사 기억을 마지막 content에 추가
-            self.context[-1]["content"] += (f"\n\n{memory_instruction}")
+        # 마지막 사용자 메시지 원본 보관
+        original_message = self.context[-1]["content"]
 
         try:
+            memory_instruction = self.retrieve_memory()
+
+            if memory_instruction:
+                self.context[-1]["content"] += (
+                    f"\n\n{memory_instruction}"
+                )
+
             return self._send_request()
 
         finally:
-            # API 요청 성공/실패와 관계없이 과거 기억 제거
-            self.clear_context()
-
-    # 답변 받은 후 context에서 instruction 삭제
-    def clear_context(self):
-        for idx in reversed(range(len(self.context))):
-            if self.context[idx]["role"] == "user":
-                content = self.context[idx]["content"]
-                if "[귓속말]" in content:
-                    self.context[idx]["content"] = content.split("\n\n[귓속말]\n")[0]
-                break
+            # API 요청 성공/실패와 관계없이 원본 복원
+            self.context[-1]["content"] = original_message
 
     # 응답 내용을 context에 추가
     def add_response(self, response):
@@ -162,12 +157,22 @@ class Chatbot:
             return ""
 
         memory = self.memoryManager.retrieve_memory(user_message)
-        if memory is not None:
-            whisper = (f"[귓속말]\n{self.assistant}야! 기억 속 대화 내용이야. 앞으로 이 내용을 참조하면서 답해 줘."
-                       f"얼마 전에 나누었던 대화라는 점을 자연스럽게 말해 줘.\n{memory}")
-            return whisper
+        print(f'memory: {memory}')
 
-        return "[기억이 안 난다고 답할 것]"
+        if memory is not None:
+            return (
+                f"[귓속말]\n"
+                f"{self.assistant}야! 기억 속 대화 내용이야. "
+                f"앞으로 이 내용을 참조하면서 답해 줘. "
+                f"얼마 전에 나누었던 대화라는 점을 자연스럽게 말해 줘.\n"
+                f"{memory}"
+            )
+
+        return (
+            "[귓속말]\n"
+            "관련된 과거 기억을 찾지 못했어. "
+            "기억하지 못하는 내용은 추측하지 말고 솔직하게 답해 줘."
+        )
 
     # 주기적으로 context를 저장하고 memory 구축하는 백그라운드 태스크
     def background_task(self):

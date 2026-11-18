@@ -7,9 +7,8 @@ class Chatbot:
         # context 초기화 및 대화 문맥 생성
         self.model = use_model
         self.context = [
-            {"role": "system", "content": system_role}
+            {"role": "system", "content": f'{system_role}\n\n{instruction}'}  # 지시 추가
         ]
-        self.instruction = instruction  # 지시 추가
         self.max_token_size = 16 * 1024  # 최대 token 수
 
     # 누적 token 수가 임계점을 넘지 않도록 제어
@@ -36,7 +35,7 @@ class Chatbot:
         )
 
     # context 전체를 OpenAI API로 전송
-    def _send_request(self):  # _ : 내장 메서드(외부에서 접근 불가)
+    def send_request(self):
         try:
             # 현재 context의 max_token 크기를 벗어날 때 처리
             if gpt_num_tokens(self.context) > self.max_token_size:
@@ -54,22 +53,6 @@ class Chatbot:
 
         except Exception as e:
             print(f'Exception 오류({type(e)}) 발생 : {e}')
-
-    # api 요청전에 context 마지막에 instruction 추가
-    def send_request(self):
-        if self.context and self.context[-1]["role"] == "user":
-            self.context[-1]["content"] += self.instruction
-
-        return self._send_request()
-
-    # 답변 받은 후 context에서 instruction 삭제
-    def clear_context(self):
-        for idx in reversed(range(len(self.context))):
-            if self.context[idx]["role"] == "user":
-                content = self.context[idx]["content"]
-                if "instruction:\n" in content:
-                    self.context[idx]["content"] = content.split("instruction:\n")[0].strip()
-                break
 
     # 응답 내용을 context에 추가
     def add_response(self, response):

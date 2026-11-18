@@ -9,7 +9,7 @@ class Chatbot:
         # context 초기화 및 대화 문맥 생성
         self.model = use_model
         self.context = [
-            {"role": "system", "content": f'{system_role}/n/n{instruction}'}
+            {"role": "system", "content": f'{system_role}\n\n{instruction}'}
         ]
         self.max_token_size = 16 * 1024  # 최대 token 수
         # WarningAgent에 전달할 파라미터 추가
@@ -85,7 +85,7 @@ class Chatbot:
 
     def send_request(self):
         # WarningAgent가 사용자의 마지막 대화를 검사
-        if self.warningAgent.monitor_user(self.context):
+        if self.warningAgent.monitor_user(self.to_openai_context()):  # saved 제외한 context 전달
             warning_message = self.warningAgent.warn_user()
             print(f"WarningAgent response: {warning_message}")
             return warning_message

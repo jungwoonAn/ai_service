@@ -57,7 +57,6 @@ def chat_api():
     # 응답 결과 출력
     response_message = chatbot.get_response(response)  # 응답 출력
     chatbot.handle_token_limit(response)  # 토큰수 제어 메서드 실행
-    chatbot.clear_context()  # instruction 삭제
     print(f'response_message : {response_message}')
 
     return {"response_message": response_message}

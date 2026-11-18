@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 from common import client, model, today, yesterday, currTime
-from pinecone.grpc import PineconeGRPC as Pinecone
+from pinecone import Pinecone
 import json
 
 load_dotenv()
@@ -97,8 +97,7 @@ class MemoryManager:
         try:
             response = client.responses.create(
                 model=model.advanced,
-                input=context,
-                temperature=0
+                input=context
             )
 
             content = response.output_text.strip()
@@ -125,84 +124,62 @@ class MemoryManager:
         )
 
         # 검색 결과가 없는 경우
-        if not results["matches"]:
+        if not results.matches:
             return None
 
-        vector_id = results["matches"][0]["id"]
-        score = results["matches"][0]["score"]
+        match = results.matches[0]
+
+        vector_id = match.id
+        score = match.score
+
         print(f"id : {vector_id}\tscore : {score}")
 
-        # 유사도가 0.7 이상인 경우에만 id값을 mongoDB에 인수로 전달
-        return vector_id if score > 0.7 else None
+        # 유사도가 0.3 이상인 경우에만 id값을 mongoDB에 인수로 전달
+        return vector_id if score > 0.3 else None
 
     # 특정 요약 ID로 MongoDB에서 기억 검색
     def search_mongo_db(self, _id):
         search_result = mongo_memory_collection.find_one({"_id": int(_id)})
         print(f'search_result : {search_result}')
 
-        return search_result['summary']
+        if search_result is None:
+            return None
 
-    # 기억이 질문과 충분히 유사한지 판단 (확률 기반)
-    def filter(self, message, memory, threshhold=0.6):
-        context = [
-            {"role": "system", "content": MEASURING_SIMILARITY_SYSTEM_ROLE},
-            {
-                "role": "user",
-                "content": json.dumps({
-                    "statement1": f"학생:{message}",
-                    "statement2": memory
-                }, ensure_ascii=False)
-            }
-        ]
-
-        try:
-            response = client.responses.create(
-                model=model.advanced,
-                input=context,
-                temperature=0,
-                text={
-                    "format": {
-                        "type": "json_object"
-                    }
-                }
-            )
-
-            content = response.output_text
-            prob = json.loads(content)["probability"]
-            print(f"filter prob : {prob}")
-
-        except Exception as e:
-            print(f"filter error : {e}")
-            prob = 0
-
-        return prob >= threshhold
+        return search_result.get("summary")
 
     # 사용자의 질문에 대해 적절한 기억을 DB에서 검색하고, 필터링 후 반환
     def retrieve_memory(self, message):
+        print("=== 기억 검색 시작 ===")
+
         vector_id = self.search_vector_db(message)
-        if not vector_id:
+        if vector_id is None:
+            print("유사 기억을 찾지 못했습니다.")
             return None
 
         memory = self.search_mongo_db(vector_id)
-        if self.filter(message, memory):
-            return memory
-        else:
+        print(f"MongoDB 기억: {memory}")
+
+        if memory is None:
+            print("MongoDB에서 기억을 찾지 못했습니다.")
             return None
+
+        print("=== 기억 검색 완료 ===")
+        return memory
 
     # 어제 날짜의 대화를 기반으로 요약을 생성하고, DB에 저장
     def build_memory(self):
         date = yesterday()
-        memory_results = mongo_memory_collection.find({"date": date})
-
-        if len(list(memory_results)) > 0:
-            return
-
         chats_results = self.restore_chat(date)
 
-        if len(list(chats_results)) == 0:
+        if not chats_results:
             return
 
         summaries = self.summarize(chats_results)
+
+        # 요약 생성에 실패하면 기존 기억을 삭제하지 않음
+        if not summaries:
+            print("build_memory : 요약 결과가 없습니다.")
+            return
 
         self.delete_by_date(date)
         self.save_to_memory(summaries, date)
@@ -241,22 +218,45 @@ class MemoryManager:
 
     # 특정 날짜의 기억을 벡터 DB와 MongoDB에서 모두 삭제
     def delete_by_date(self, date):
-        # Pinecone 삭제
-        pinecone_index.documents.delete(
-            namespace="chatbot-memory",
-            filter={
-                "date": {
-                    "$eq": "20261117"
-                }
-            }
+        # 1. MongoDB에서 해당 날짜의 기억 ID 조회
+        memories = list(
+            mongo_memory_collection.find(
+                {"date": date},
+                {"_id": 1}
+            )
         )
-        # MongoDB 삭제
-        mongo_memory_collection.delete_many({"date": date})
+
+        # 2. Pinecone에서 삭제할 ID 목록 생성
+        vector_ids = [
+            str(memory["_id"])
+            for memory in memories
+        ]
+
+        # 3. Pinecone 삭제 (최대 1,000개씩 처리)
+        for i in range(0, len(vector_ids), 1000):
+            batch_ids = vector_ids[i:i + 1000]
+
+            pinecone_index.documents.delete(
+                namespace="chatbot-memory",
+                ids=batch_ids
+            )
+
+        # 4. MongoDB 삭제
+        result = mongo_memory_collection.delete_many({
+            "date": date
+        })
+
+        print(f"Pinecone 삭제 요청 ID 수: {len(vector_ids)}")
+        print(f"MongoDB 삭제 문서 수: {result.deleted_count}")
 
     # 요약 데이터를 MongoDB 및 Pinecone에 저장
     def save_to_memory(self, summaries, date):
+        if not summaries:
+            return
+
         next_id = self.next_memory_id()
         documents = []
+        mongo_documents = []
 
         for summary in summaries:
             # Pinecone Documents API에 저장할 문서
@@ -269,15 +269,13 @@ class MemoryManager:
             documents.append(document)
 
             # MongoDB 저장
-            query = {"_id": next_id}  # 조회조건
-            newvalues = {
-                "$set": {
-                    "date": date,
-                    "keyword": summary["주제"],
-                    "summary": summary["요약"],
-                }
-            }
-            mongo_memory_collection.update_one(query, newvalues, upsert=True)
+            mongo_documents.append({
+                "_id": next_id,
+                "date": date,
+                "keyword": summary["주제"],
+                "summary": summary["요약"]
+            })
+
             next_id += 1
 
         # Pinecone Documents API로 일괄 저장
@@ -285,6 +283,9 @@ class MemoryManager:
             namespace="chatbot-memory",
             documents=documents
         )
+
+        if mongo_documents:
+            mongo_memory_collection.insert_many(mongo_documents)
 
     # 메모리에 저장할 다음 ID 생성
     def next_memory_id(self):

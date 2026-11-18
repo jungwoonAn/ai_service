@@ -175,10 +175,35 @@ class ToolCalling:
                     }
                 )
 
+
+            ## 대화내용 저장하면서 saved속성이 추가되어 제거하고 요청해야 함!!
+            # OpenAI API에 전달할 context 생성
+            openai_context = [
+                {
+                    "role": message["role"],
+                    "content": message["content"]
+                }
+                for message in context
+                if "role" in message and "content" in message
+            ]
+
+            # function_call과 function_call_output은 role/content 형식이 아니므로
+            # 별도로 유지해야 합니다.
+            openai_context = [
+                message if message.get("type") in (
+                    "function_call", "function_call_output"
+                )
+                else {
+                    "role": message["role"],
+                    "content": message["content"]
+                }
+                for message in context
+            ]
+
             # 모든 함수 실행 결과를 포함하여 Responses API 다시 호출
             final_response = client.responses.create(
                 model=self.model,
-                input=context,
+                input=openai_context,  # saved속성 제거한 context
                 tools=tools
             )
             return final_response
